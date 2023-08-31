@@ -1,6 +1,8 @@
 const generateToken = require("../helper/jwt");
 const userModel = require("../model/user.model");
 const bcrypt = require("bcrypt");
+const redis = require("../config/redis");
+const cloudinary = require("../helper/cloudinary");
 
 const userController = {
   list: (req, res) => {
@@ -16,8 +18,8 @@ const userController = {
   insert: async (req, res) => {
     try {
       const {id, username, password, level} = req.body;
-      const image = req.file.filename;
-      console.log(image);
+      // const image = req.file.filename;
+      const image = await cloudinary.uploader.upload(req.file.path);
       bcrypt.hash(password, 10, function (err, hash) {
         // Store hash in your password DB 
         if (err) {
@@ -28,7 +30,7 @@ const userController = {
             username,
             password: hash,
             level,
-            image
+            image: image.original_filename
           };
 
           // console.log(data);
@@ -81,7 +83,7 @@ const userController = {
 
   login: (req, res) => {
     const { username, password } = req.body;
-    userModel.loginUser(username)
+    userModel.login(username)
       .then((data) => {
 
         // console.log(data);
@@ -111,7 +113,27 @@ const userController = {
           });
         }      
       });
+  },
+
+  getByID: (req, res) => {
+    const id = req.params.id;
+    userModel.selectById(id)
+      .then((result) => {
+        const dataRedis = redis.set(`getFromRedis/${id}`, JSON.stringify(result), {
+          EX: 100,
+          NX: true
+        });
+        res.send({
+          fromCache: false,
+          data: dataRedis
+        });
+      })
+      .catch((err) => {
+        res.json({message: err.message});
+      });         
   }
 };
+
+
 
 module.exports = userController;

@@ -37,7 +37,7 @@ const userModel = {
     });
   },
   
-  loginUser: (username) => {
+  login: (username) => {
     return new Promise((resolve, reject) => {
       db.query(`SELECT * FROM users WHERE username = '${username}'`, (err, res) => {
         if (err) reject(err);
@@ -45,6 +45,15 @@ const userModel = {
       });
     });
   },
+
+  selectById: (id) => {
+    return new Promise((resolve, reject) => {
+      db.query(`SELECT * FROM users WHERE id = '${id}'`, (err, res) => {
+        if (err) reject(err);
+        else resolve(res);
+      });
+    });
+  }
   
 };
 
